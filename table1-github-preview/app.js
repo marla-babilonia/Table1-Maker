@@ -3,6 +3,8 @@
 const $ = id => document.getElementById(id);
 
 const STEPS = [
+    ["Filter the cohort",
+        "Keep all records or add filters. Every record must meet all filters to be included."],
     ["Identify ID columns",
         "Check any columns used as identifiers. Leave them unchecked if there are none."],
     ["Choose variables to include",
@@ -18,6 +20,10 @@ const STEPS = [
 ];
 
 let dataset;
+let sourceDataset;
+let sourceName;
+let filters = [];
+let cohortIndices;
 let variables = [];
 let current;
 let step = 0;
@@ -112,7 +118,8 @@ function reset() {
     loadVersion++;
     rowOrder = [];
     $("row-order")?.remove();
-    dataset = current = undefined;
+    dataset = current = sourceDataset = cohortIndices = undefined;
+    filters = [];
     variables = [];
     step = 0;
     title = "Table 1";
@@ -137,8 +144,124 @@ function loadData(text, name) {
 }
 
 function loadDataset(input, name) {
-    dataset = input;
+    sourceDataset = input;
+    sourceName = name;
+    $("clear").hidden = false;
+    $("status").textContent = `${name} · ${input.data.length} records · ${input.names.length} columns`;
+    renderStep();
+}
 
+function matchingCohort() {
+    const tests = filters.map(rule => {
+        if (rule.column === "") throw new Error("Choose a column for each filter.");
+        const column = Number(rule.column);
+        if (rule.mode === "nonempty") return row => Boolean(row[column].trim());
+        if (rule.mode === "empty") return row => !row[column].trim();
+
+        const wanted = new Set(rule.values.split(/\r?\n/).map(value => value.trim()).filter(Boolean));
+        if (!wanted.size) throw new Error("Enter at least one value for each matching filter.");
+        const separator = SEPARATORS[rule.separator];
+        return row => {
+            const cell = row[column];
+            const answers = separator ? cell.split(separator) : [cell];
+            return answers.some(answer => wanted.has(answer.trim()));
+        };
+    });
+    const indices = [];
+    sourceDataset.data.forEach((row, index) => {
+        if (tests.every(test => test(row))) indices.push(index);
+    });
+    return indices;
+}
+
+function renderCohortFilter(parent) {
+    const count = element("p");
+    count.setAttribute("role", "status");
+    parent.append(count);
+
+    function updateCount() {
+        try {
+            count.textContent = `${matchingCohort().length} of ${sourceDataset.data.length} records match.`;
+        } catch (error) {
+            count.textContent = error.message;
+        }
+    }
+
+    filters.forEach((rule, index) => {
+        const box = card(parent, `Filter ${index + 1}`);
+        selectField(box, "Column (including IDs)", [
+            ["", "Choose a column"],
+            ...sourceDataset.names.map((name, i) => [String(i), name]),
+        ], rule.column, value => {
+            rule.column = value;
+            updateCount();
+        });
+        selectField(box, "Keep rows where the value", [
+            ["match", "Matches any listed value"],
+            ["nonempty", "Is not empty"],
+            ["empty", "Is empty"],
+        ], rule.mode, value => {
+            rule.mode = value;
+            renderStep();
+        });
+        if (rule.mode === "match") {
+            const label = element("label", "Accepted values, one per line (case-sensitive)", "wizard-field");
+            const input = element("textarea");
+            input.rows = 4;
+            input.value = rule.values;
+            input.addEventListener("input", () => {
+                rule.values = input.value;
+                updateCount();
+            });
+            label.append(input);
+            box.append(label);
+            selectField(box, "How to read each cell", [
+                ["single", "Match the whole cell"],
+                ["comma", "Match any answer separated by commas"],
+                ["semicolon", "Match any answer separated by semicolons"],
+                ["pipe", "Match any answer separated by vertical bars"],
+            ], rule.separator, value => {
+                rule.separator = value;
+                updateCount();
+            });
+        }
+        const remove = element("button", "Remove filter");
+        remove.type = "button";
+        remove.addEventListener("click", () => {
+            filters.splice(index, 1);
+            renderStep();
+        });
+        box.append(remove);
+    });
+
+    const add = element("button", "Add filter");
+    add.type = "button";
+    add.addEventListener("click", () => {
+        filters.push({column: "", mode: "match", values: "", separator: "single"});
+        renderStep();
+    });
+    parent.append(add);
+    if (cohortIndices) {
+        parent.append(element("p", "Changing which records are included resets your table selections."));
+    }
+    updateCount();
+}
+
+function applyCohortFilter() {
+    const indices = matchingCohort();
+    if (!indices.length) throw new Error("No records match. Edit or remove a filter to continue.");
+    if (cohortIndices?.length === indices.length && indices.every((value, i) => value === cohortIndices[i])) return;
+
+    cohortIndices = indices;
+    dataset = {
+        names: [...sourceDataset.names],
+        data: indices.map(index => [...sourceDataset.data[index]]),
+    };
+    rowOrder = [];
+    title = "Table 1";
+    display = {...DEFAULT_DISPLAY};
+    strataSettings = {column: ""};
+    columnLabels = {characteristic: "Characteristic", overall: ""};
     variables = dataset.names.map((source, column) => {
         const observed = dataset.data.map(row => row[column]);
         // Infer from values only. The user marks identifiers separately.
@@ -149,8 +272,7 @@ function loadDataset(input, name) {
 
     $("clear").hidden = false;
     $("status").textContent =
-        `${name} · ${dataset.data.length} records · ${variables.length} columns`;
-    renderStep();
+        `${sourceName} · ${dataset.data.length} of ${sourceDataset.data.length} records in cohort · ${variables.length} columns`;
 }
 
 function renderIdentifiers(parent) {
@@ -730,6 +852,7 @@ function renderNames(parent) {
 }
 
 const RENDERERS = [
+    renderCohortFilter,
     renderIdentifiers,
     renderIncluded,
     renderNumerical,
@@ -754,11 +877,12 @@ function renderStep() {
 }
 
 function validateStep() {
-    if (step === 1 && !included().length) {
+    if (step === 0) applyCohortFilter();
+    if (step === 2 && !included().length) {
         throw new Error("Choose at least one variable to include.");
     }
 
-    if (step === 2) {
+    if (step === 3) {
         for (const variable of included().filter(item => item.type === "numeric")) {
             if (numericReview(dataset, variable).invalid.length) {
                 throw new Error(`Resolve the highlighted values in ${variable.source}, or go back to change its type.`);
@@ -766,7 +890,7 @@ function validateStep() {
         }
     }
 
-    if (step === 3) {
+    if (step === 4) {
         for (const variable of included().filter(item => item.type === "categorical")) {
             const {counts, missing} = categoricalReview(dataset, variable);
             const hasVisibleLevel = [...counts.keys()].some(value => !variable.hiddenLevels.has(value));
@@ -777,9 +901,9 @@ function validateStep() {
         }
     }
 
-    if (step === 4) selectedStrata();
+    if (step === 5) selectedStrata();
 
-    if (step === 5) {
+    if (step === 6) {
         validateHeadings(selectedStrata());
         if (!title.trim()) throw new Error("Enter a table title.");
         if (display.showNotes && !display.note.trim()) throw new Error("Enter footer text or turn the footer off.");
