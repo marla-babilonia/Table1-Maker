@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <title>How to use Table 1 Maker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">MARLA'S WORKSHOP</p>
+      <h1>How to use Table 1 Maker</h1>
+      <p>Keep this page open while you work in the Table 1 Maker tab.</p>
+    </header>
+
+    <section>
+      <h2>1. Choose your data</h2>
+      <p>Select a comma-separated CSV or an Excel workbook ending in <code>.xlsx</code>.
+        Use unique column names in the first row and one record per row below.
+        If the workbook has multiple sheets, choose the worksheet to analyze.</p>
+      <p>The app reads the selected file in your browser. Your edits apply to the table you create.
+        The original file stays as saved.</p>
+    </section>
+
+    <section>
+      <h2>2. Identify IDs and choose variables</h2>
+      <p>Mark columns such as record ID as identifiers, then select the columns to summarize.
+        Review whether each included column should be numerical or categorical.
+        Marking an ID excludes that column from summaries. Counts are based on rows.</p>
+      <p>To create a combined categorical column, open <strong>Merge two columns</strong>.
+        Choose two sources and keep all values or selected values from each.
+        The app combines retained values within each record.</p>
+    </section>
+
+    <section>
+      <h2>3. Review numerical and categorical variables</h2>
+      <ul>
+        <li>For numerical variables, choose mean (sample SD) or median [Q1, Q3].
+          You can add individual statistics as indented rows.</li>
+        <li>Choose the number format for values such as <code>1,25</code> or <code>1,250</code>.
+          A red correction box needs review. Apply a valid correction or mark it missing to turn it green.</li>
+        <li>For categorical variables, choose which categories to show. Keep a cell such as
+          <code>Boston, MA</code> together, or split a cell such as <code>1,4</code> if it represents
+          two responses.</li>
+        <li>Use <strong>Merge values in this column</strong> to combine selected categories into a named category.
+          If a record contains both selected values, it counts once in the merged category.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. Stratify the table, if needed</h2>
+      <p>Choose a grouping variable, such as diagnosis, to add one column per selected group.
+        For a numerical variable, enter cut points separated by semicolons.
+        For example, <code>40; 65</code> creates under 40, 40 to under 65, and 65 or higher.</p>
+      <p>Choose which strata to display and edit their column names. The cohort column can include
+        every record or only records in the displayed strata. If strata overlap, a record counts once
+        in the combined cohort.</p>
+    </section>
+
+    <section>
+      <h2>5. Edit names, preview, and download</h2>
+      <p>Set the table title and column names. Click <strong>Edit</strong> next to a category
+        to rename it or insert a heading before it. Choose whether to show record counts, missing counts,
+        bold headings, an editable footer, or a complete statistics sheet in Excel.</p>
+      <p>Generate the preview. Use <strong>Reorder rows</strong> to move headings and categories.
+        When the table is ready, download Excel or PDF. Both exports use the order shown in the preview.</p>
+    </section>
+  </main>
+</body>
+</html>

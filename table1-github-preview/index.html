@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <title>Table 1 Maker</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="table-layout.css">
+  <script defer src="vendor/jszip.min.js"></script>
+  <script defer src="vendor/pdf-lib.min.js"></script>
+  <script defer src="engine.js"></script>
+  <script defer src="excel-input.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">ONG'S LAB WORKSHOP</p>
+      <h1>Table 1 Maker</h1>
+      <p>Create a descriptive table from a CSV or Excel file and download it as Excel or PDF.</p>
+      <span class="badge">● Processed on this device</span>
+    </header>
+
+    <section>
+      <h2>Choose a CSV or Excel File</h2>
+      <p>Use a comma-separated CSV or an .xlsx workbook with a header row.</p>
+      <div class="actions">
+        <label class="picker">
+          Choose file
+          <input id="file" type="file" accept=".csv,.xlsx">
+        </label>
+        <button id="clear" type="button" hidden>Clear data</button>
+      </div>
+      <p id="status" role="status"></p>
+      <p id="error" role="alert"></p>
+      <div id="worksheet-picker"></div>
+      <p class="small"><a href="instructions.html" target="_blank" rel="noopener">How to use Table 1 Maker (opens separately)</a></p>
+    </section>
+
+    <section id="settings" hidden>
+      <p id="step-counter" class="eyebrow"></p>
+      <h2 id="step-title" tabindex="-1"></h2>
+      <p id="step-help"></p>
+      <p id="step-error" role="alert"></p>
+      <div id="step-content"></div>
+      <div class="actions wizard-actions">
+        <button id="back" type="button">Back</button>
+        <button id="next" type="button" class="primary">Continue</button>
+      </div>
+    </section>
+
+    <section id="results" hidden>
+      <h2>Preview and download</h2>
+      <div class="actions">
+        <button id="excel" type="button" class="primary">Download Excel</button>
+        <button id="pdf" type="button">Download PDF</button>
+        <button id="edit" type="button">Edit table settings</button>
+      </div>
+      <div class="scroll">
+        <table>
+          <caption id="caption"></caption>
+          <thead><tr></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p id="notes" class="small"></p>
+    </section>
+  </main>
+</body>
+</html>
